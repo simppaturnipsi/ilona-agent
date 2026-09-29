@@ -1,0 +1,55 @@
+name: Test and publish Ilona Agent installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test agents
+        run: python -m unittest discover -s tests -v
+
+      - name: Package installers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/windows/IlonaAgent dist/ubuntu/ilona-agent
+
+          cp README.md install-windows.ps1 ilona_agent_windows.py \
+            requirements-windows.txt server-ca.crt dist/windows/IlonaAgent/
+          cp README.md install-user.sh ilona-agent-wrapper ilona-agent.service \
+            ilona_agent.py server-ca.crt dist/ubuntu/ilona-agent/
+
+          (cd dist/windows && zip -qr ../IlonaAgent-Windows.zip IlonaAgent)
+          tar -czf dist/ilona-agent-ubuntu.tar.gz -C dist/ubuntu ilona-agent
+          cd dist
+          sha256sum IlonaAgent-Windows.zip ilona-agent-ubuntu.tar.gz > SHA256SUMS
+          test -s IlonaAgent-Windows.zip
+          test -s ilona-agent-ubuntu.tar.gz
+          unzip -l IlonaAgent-Windows.zip
+          tar -tzf ilona-agent-ubuntu.tar.gz
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/IlonaAgent-Windows.zip
+            dist/ilona-agent-ubuntu.tar.gz
+            dist/SHA256SUMS
+          fail_on_unmatched_files: true
