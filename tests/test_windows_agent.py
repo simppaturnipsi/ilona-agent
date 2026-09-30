@@ -25,7 +25,7 @@ class WindowsAgentTests(unittest.TestCase):
         self.assertIn("$python $agent --startup auto install", script)
         self.assertNotIn("$python $agent install --startup auto", script)
         self.assertIn("$programFilesRoot 'Python312\\python.exe'", script)
-        self.assertIn("sysconfig.get_path(\"purelib\")", script)
+        self.assertIn("site.getsitepackages().__getitem__(0)", script)
         self.assertNotIn("get_paths()[", script)
         self.assertIn("import pip, sysconfig", script)
         self.assertIn("$python -m pip install", script)

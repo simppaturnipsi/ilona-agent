@@ -47,7 +47,7 @@ New-Item -ItemType Directory -Force -Path $installDir, $dataDir | Out-Null
 $venv = Join-Path $installDir 'venv'
 $venvPython = Join-Path $venv 'Scripts\python.exe'
 $agent = Join-Path $installDir 'ilona_agent_windows.py'
-$sitePackages = (& $python -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | Select-Object -Last 1).Trim()
+$sitePackages = (& $python -c 'import site; print(site.getsitepackages().__getitem__(0))' | Select-Object -Last 1).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $sitePackages) { throw 'Pythonin yhteistä site-packages-hakemistoa ei voitu selvittää.' }
 $sitePackages = [IO.Path]::GetFullPath($sitePackages)
 if (-not $sitePackages.StartsWith($programFilesRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
