@@ -22,6 +22,8 @@ class WindowsAgentTests(unittest.TestCase):
         self.assertIn("$python $agent --startup auto install", script)
         self.assertNotIn("$python $agent install --startup auto", script)
         self.assertIn("$programFilesRoot 'Python312\\python.exe'", script)
+        self.assertIn("sysconfig.get_path(\"purelib\")", script)
+        self.assertNotIn("get_paths()[", script)
         self.assertIn("$sitePackages = (& $python -c", script)
         self.assertIn("Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $sitePackages", script)
         self.assertIn("if (Test-Path $venv) {", script)
