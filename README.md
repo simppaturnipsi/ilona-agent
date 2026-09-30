@@ -25,7 +25,11 @@ system metadata. Installed application versions are reported separately.
 Requirements: 64-bit Python 3.12 installed for all users under
 `C:\Program Files\Python312`, the Python Launcher, PowerShell, and an
 Administrator PowerShell session. A per-user Python installation is not
-suitable because the service runs as LocalSystem. First establish the
+suitable because the service runs as LocalSystem. Python's `pip` module must
+also be available through `python -m pip`; the installer does not invoke the
+standalone `pip.exe` launcher. On managed workstations, Windows application
+control policy must permit the approved Python runtime and pywin32 package.
+First establish the
 workstation's VPN route to Ilona Admin. Download and extract
 `IlonaAgent-Windows.zip`, then open an Administrator PowerShell window in the
 folder containing `install-windows.ps1`:

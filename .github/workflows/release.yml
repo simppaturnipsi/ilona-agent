@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+      - '[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*'
   workflow_dispatch:
 
 permissions:
@@ -56,8 +57,28 @@ jobs:
 
       - name: Package installers
         shell: bash
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
         run: |
           set -euo pipefail
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ['RELEASE_VERSION']
+          if version.startswith('v'):
+              version = version[1:]
+          if not re.fullmatch(r'\d{4}\.\d{1,2}\.\d+', version):
+              raise SystemExit(f'Invalid release version: {version}')
+          for name in ('ilona_agent.py', 'ilona_agent_windows.py'):
+              path = Path(name)
+              source = path.read_text()
+              source, count = re.subn(r"(?m)^VERSION = '[^']+'$", f"VERSION = '{version}'", source)
+              if count != 1:
+                  raise SystemExit(f'Could not set version in {name}')
+              path.write_text(source)
+          PY
           mkdir -p dist/windows/IlonaAgent dist/ubuntu/ilona-agent
 
           cp README.md install-windows.ps1 ilona_agent_windows.py \

@@ -31,6 +31,11 @@ if (-not (Test-Path $basePython)) {
 if (-not (Test-Path $basePython)) { throw "Python 3.12 -suoritustiedostoa ei löydy: $basePython" }
 & $basePython -c 'import sys; assert sys.version_info[:2] == (3, 12) and sys.maxsize > 2**32'
 if ($LASTEXITCODE -ne 0) { throw 'Ilona Agent vaatii 64-bittisen Python 3.12:n asennettuna kaikille käyttäjille.' }
+$python = $basePython
+& $python -c 'import pip, sysconfig'
+if ($LASTEXITCODE -ne 0) {
+    throw 'Pythonin pip-moduuli ei ole käytettävissä. Korjaa tai asenna Python 3.12 (kaikille käyttäjille, mukaan lukien pip) ja tarkista Windowsin sovellushallinnan käytännöt.'
+}
 $pythonBase = (& $basePython -c 'import sys; print(sys.base_prefix)' | Select-Object -Last 1).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Pythonin asennuspolkua ei voitu tarkistaa.' }
 $pythonBase = [IO.Path]::GetFullPath($pythonBase).TrimEnd('\')
@@ -42,7 +47,6 @@ New-Item -ItemType Directory -Force -Path $installDir, $dataDir | Out-Null
 $venv = Join-Path $installDir 'venv'
 $venvPython = Join-Path $venv 'Scripts\python.exe'
 $agent = Join-Path $installDir 'ilona_agent_windows.py'
-$python = $basePython
 $sitePackages = (& $python -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | Select-Object -Last 1).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $sitePackages) { throw 'Pythonin yhteistä site-packages-hakemistoa ei voitu selvittää.' }
 $sitePackages = [IO.Path]::GetFullPath($sitePackages)
@@ -68,7 +72,9 @@ if ($existingService) {
 # Install its sole third-party dependency into machine Python and install the
 # importable service module beside it, all under the machine-wide Program Files tree.
 & $python -m pip install --disable-pip-version-check -r (Join-Path $source 'requirements-windows.txt')
-if ($LASTEXITCODE -ne 0) { throw 'pywin32n asennus konekohtaiseen Pythoniin epäonnistui.' }
+if ($LASTEXITCODE -ne 0) {
+    throw 'pywin32n asennus epäonnistui. Tarkista, sallivatko Windowsin sovellushallinnan käytännöt Pythonin pip-moduulin ja pywin32-paketin.'
+}
 Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $installDir
 Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $sitePackages
 Copy-Item -Force (Join-Path $source 'server-ca.crt') $dataDir

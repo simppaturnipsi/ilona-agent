@@ -11,6 +11,9 @@ SPEC.loader.exec_module(agent)
 
 
 class WindowsAgentTests(unittest.TestCase):
+    def test_agent_version_uses_year_month_revision_format(self):
+        self.assertRegex(agent.VERSION, r'^\d{4}\.\d{1,2}\.\d+$')
+
     def test_pywin32_service_verb_can_follow_options(self):
         self.assertTrue(agent.is_service_command(['--startup', 'auto', 'install']))
         self.assertTrue(agent.is_service_command(['start']))
@@ -24,6 +27,9 @@ class WindowsAgentTests(unittest.TestCase):
         self.assertIn("$programFilesRoot 'Python312\\python.exe'", script)
         self.assertIn("sysconfig.get_path(\"purelib\")", script)
         self.assertNotIn("get_paths()[", script)
+        self.assertIn("import pip, sysconfig", script)
+        self.assertIn("$python -m pip install", script)
+        self.assertNotIn("pip.exe", script)
         self.assertIn("$sitePackages = (& $python -c", script)
         self.assertIn("Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $sitePackages", script)
         self.assertIn("if (Test-Path $venv) {", script)

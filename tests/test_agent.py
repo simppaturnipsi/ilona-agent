@@ -11,6 +11,9 @@ SPEC.loader.exec_module(agent)
 
 
 class AgentTests(unittest.TestCase):
+    def test_agent_version_uses_year_month_revision_format(self):
+        self.assertRegex(agent.VERSION, r'^\d{4}\.\d{1,2}\.\d+$')
+
     def test_os_release_parser_handles_quotes(self):
         with tempfile.NamedTemporaryFile('w', delete=False) as f:
             f.write('NAME="Ubuntu Linux"\nVERSION_ID="26.04"\nID=ubuntu\n')
