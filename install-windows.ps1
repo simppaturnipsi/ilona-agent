@@ -42,31 +42,40 @@ New-Item -ItemType Directory -Force -Path $installDir, $dataDir | Out-Null
 $venv = Join-Path $installDir 'venv'
 $venvPython = Join-Path $venv 'Scripts\python.exe'
 $agent = Join-Path $installDir 'ilona_agent_windows.py'
-if (Test-Path $venvPython) {
-    $venvBase = (& $venvPython -c 'import sys; print(sys.base_prefix)' 2>$null | Select-Object -Last 1).Trim()
-    if ($LASTEXITCODE -ne 0) { $venvBase = '' }
-    if ($venvBase) { $venvBase = [IO.Path]::GetFullPath($venvBase).TrimEnd('\') }
-    if ($venvBase -ne $pythonBase) {
-        $oldService = Get-Service -Name IlonaAgent -ErrorAction SilentlyContinue
-        if ($oldService) {
-            if ($oldService.Status -ne 'Stopped') { Stop-Service -Name IlonaAgent -Force -ErrorAction SilentlyContinue }
-            if (Test-Path $agent) {
-                & $venvPython $agent remove
-                if ($LASTEXITCODE -ne 0) { throw 'Vanhan Ilona Agent -palvelun poistaminen epäonnistui; vanhaa virtuaaliympäristöä ei muutettu.' }
-            }
-        }
-        Remove-Item -LiteralPath $venv -Recurse -Force
+$python = $basePython
+$sitePackages = (& $python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])' | Select-Object -Last 1).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $sitePackages) { throw 'Pythonin yhteistä site-packages-hakemistoa ei voitu selvittää.' }
+$sitePackages = [IO.Path]::GetFullPath($sitePackages)
+if (-not $sitePackages.StartsWith($programFilesRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Pythonin site-packages-hakemiston on oltava kaikkien käyttäjien käytettävissä ($sitePackages)."
+}
+
+$existingService = Get-Service -Name IlonaAgent -ErrorAction SilentlyContinue
+if ($existingService) {
+    if ($existingService.Status -ne 'Stopped') {
+        Stop-Service -Name IlonaAgent -Force -ErrorAction Stop
+        $existingService.WaitForStatus('Stopped', [TimeSpan]::FromSeconds(30))
     }
+    if (Test-Path $venvPython) {
+        & $venvPython $agent remove
+    } else {
+        & $python $agent remove
+    }
+    if ($LASTEXITCODE -ne 0) { throw 'Aiemman Ilona Agent -palvelun poistaminen epäonnistui.' }
 }
-if (-not (Test-Path $venvPython)) {
-    & $basePython -m venv $venv
-    if ($LASTEXITCODE -ne 0) { throw 'Python-virtuaaliympäristön luonti epäonnistui.' }
-}
-$python = $venvPython
+
+# pywin32's Python service host does not reliably load modules from a venv.
+# Install its sole third-party dependency into machine Python and install the
+# importable service module beside it, all under the machine-wide Program Files tree.
 & $python -m pip install --disable-pip-version-check -r (Join-Path $source 'requirements-windows.txt')
-if ($LASTEXITCODE -ne 0) { throw 'pywin32-riippuvuuden asennus epäonnistui.' }
+if ($LASTEXITCODE -ne 0) { throw 'pywin32n asennus konekohtaiseen Pythoniin epäonnistui.' }
 Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $installDir
+Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $sitePackages
 Copy-Item -Force (Join-Path $source 'server-ca.crt') $dataDir
+
+if (Test-Path $venv) {
+    Remove-Item -LiteralPath $venv -Recurse -Force
+}
 
 # Credentials, local queue and logs are readable only by LocalSystem and local
 # Administrators. Program Files keeps its normal Administrators/SYSTEM ACL.
@@ -84,14 +93,6 @@ if (-not $SkipEnrollment -and -not (Test-Path $configPath)) {
 }
 
 if (Test-Path $configPath) {
-    $existingService = Get-Service -Name IlonaAgent -ErrorAction SilentlyContinue
-    if ($existingService) {
-        if ($existingService.Status -ne 'Stopped') {
-            Stop-Service -Name IlonaAgent -Force -ErrorAction Stop
-        }
-        & $python $agent remove
-        if ($LASTEXITCODE -ne 0) { throw 'Aiemman Ilona Agent -palvelun poistaminen epäonnistui.' }
-    }
     # pywin32's HandleCommandLine expects options before its service verb.
     & $python $agent --startup auto install
     if ($LASTEXITCODE -ne 0) { throw 'Windows-palvelun asennus epäonnistui.' }
@@ -113,4 +114,4 @@ if (Test-Path $configPath) {
 }
 
 Write-Host "Lokitiedosto: $(Join-Path $dataDir 'agent.log')"
-Write-Host 'Palvelu: IlonaAgent (LocalSystem; ei käyttöliittymää)'
+Write-Host 'Palvelu: IlonaAgent (LocalSystem; ei käyttöliittymää; konekohtainen Python)'

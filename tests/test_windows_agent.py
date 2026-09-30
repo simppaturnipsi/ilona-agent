@@ -22,7 +22,10 @@ class WindowsAgentTests(unittest.TestCase):
         self.assertIn("$python $agent --startup auto install", script)
         self.assertNotIn("$python $agent install --startup auto", script)
         self.assertIn("$programFilesRoot 'Python312\\python.exe'", script)
-        self.assertIn("$venvBase -ne $pythonBase", script)
+        self.assertIn("$sitePackages = (& $python -c", script)
+        self.assertIn("Copy-Item -Force (Join-Path $source 'ilona_agent_windows.py') $sitePackages", script)
+        self.assertIn("if (Test-Path $venv) {", script)
+        self.assertIn("Remove-Item -LiteralPath $venv -Recurse -Force", script)
         self.assertIn("if ($service.Status -ne 'Running')", script)
 
     def test_windows_11_pro_reports_edition_display_version_and_ubr(self):

@@ -42,6 +42,9 @@ sets the credential/config/queue directory ACL to LocalSystem and local
 Administrators, then installs and starts the `IlonaAgent` service. The
 machine-specific API credential is stored under
 `C:\ProgramData\Ilona\Agent\config.json`; it is not written to SQLite.
+The service uses machine-wide Python under Program Files: pywin32 is installed
+there, and the service module is copied to its shared `site-packages` because
+pywin32's service host does not reliably import service modules from a venv.
 
 Service status and logs:
 
@@ -56,7 +59,7 @@ protected config file. Its local SQLite queue is retained across VPN/server
 outages and drained when connectivity returns. Re-enrollment is not needed for
 ordinary outages. To install without enrolling, use
 `install-windows.ps1 -SkipEnrollment`; after manually enrolling with the
-installed Python command, run `& "$env:ProgramFiles\Ilona\Agent\venv\Scripts\python.exe"
+machine Python command, run `& "$env:ProgramFiles\Python312\python.exe"
 "$env:ProgramFiles\Ilona\Agent\ilona_agent_windows.py" --startup auto install` and
 then run the same command with `start` in place of `install`.
 
@@ -69,7 +72,7 @@ then run the following from an elevated PowerShell window after the
 `-SkipEnrollment` install:
 
 ```powershell
-$py = "$env:ProgramFiles\Ilona\Agent\venv\Scripts\python.exe"
+$py = "$env:ProgramFiles\Python312\python.exe"
 $agent = "$env:ProgramFiles\Ilona\Agent\ilona_agent_windows.py"
 $data = "$env:ProgramData\Ilona\Agent"
 & $py $agent --config "$data\config.json" --ca-file "$data\server-ca.crt" enroll

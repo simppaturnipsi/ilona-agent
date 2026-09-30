@@ -21,7 +21,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 DEFAULT_CONFIG = Path.home() / '.config/ilona-agent/config.json'
 DEFAULT_CA = Path.home() / '.config/ilona-agent/server-ca.crt'
 DEFAULT_STATE = Path.home() / '.local/state/ilona-agent/queue.db'

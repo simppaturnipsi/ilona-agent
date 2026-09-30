@@ -21,7 +21,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 ROOT = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'Ilona' / 'Agent'
 CONFIG = ROOT / 'config.json'
 CA_FILE = ROOT / 'server-ca.crt'
