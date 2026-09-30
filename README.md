@@ -22,10 +22,13 @@ UBR revision, architecture, install date, last boot and uptime. The agent does
 not read or transmit Windows product keys; edition is identified from Windows
 system metadata. Installed application versions are reported separately.
 
-Requirements: 64-bit Python 3.12 with the Python Launcher, PowerShell, and an
-Administrator PowerShell session. First establish the workstation's VPN route
-to Ilona Admin. Download and extract `IlonaAgent-Windows.zip`, then open an
-Administrator PowerShell window in the folder containing `install-windows.ps1`:
+Requirements: 64-bit Python 3.12 installed for all users under
+`C:\Program Files\Python312`, the Python Launcher, PowerShell, and an
+Administrator PowerShell session. A per-user Python installation is not
+suitable because the service runs as LocalSystem. First establish the
+workstation's VPN route to Ilona Admin. Download and extract
+`IlonaAgent-Windows.zip`, then open an Administrator PowerShell window in the
+folder containing `install-windows.ps1`:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass

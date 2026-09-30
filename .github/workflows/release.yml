@@ -10,7 +10,37 @@ permissions:
   contents: write
 
 jobs:
+  test-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Windows agent dependency
+        run: python -m pip install -r requirements-windows.txt
+
+      - name: Test Windows agent
+        run: python -m unittest discover -s tests -p test_windows_agent.py -v
+
+      - name: Validate PowerShell installer syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            "$PWD/install-windows.ps1", [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'Windows installer PowerShell syntax check failed.'
+          }
+
   release:
+    needs: test-windows
     runs-on: ubuntu-latest
     steps:
       - name: Check out source

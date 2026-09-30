@@ -21,6 +21,9 @@ class WindowsAgentTests(unittest.TestCase):
         self.assertIn("-not $SkipEnrollment -and -not (Test-Path $configPath)", script)
         self.assertIn("$python $agent --startup auto install", script)
         self.assertNotIn("$python $agent install --startup auto", script)
+        self.assertIn("$programFilesRoot 'Python312\\python.exe'", script)
+        self.assertIn("$venvBase -ne $pythonBase", script)
+        self.assertIn("if ($service.Status -ne 'Running')", script)
 
     def test_windows_11_pro_reports_edition_display_version_and_ubr(self):
         rows = [
