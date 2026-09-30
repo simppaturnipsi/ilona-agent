@@ -11,6 +11,17 @@ SPEC.loader.exec_module(agent)
 
 
 class WindowsAgentTests(unittest.TestCase):
+    def test_pywin32_service_verb_can_follow_options(self):
+        self.assertTrue(agent.is_service_command(['--startup', 'auto', 'install']))
+        self.assertTrue(agent.is_service_command(['start']))
+        self.assertFalse(agent.is_service_command(['--config', 'config.json', 'enroll']))
+
+    def test_installer_uses_pywin32_option_order_and_reuses_enrollment(self):
+        script = (MODULE.parent / 'install-windows.ps1').read_text(encoding='utf-8')
+        self.assertIn("-not $SkipEnrollment -and -not (Test-Path $configPath)", script)
+        self.assertIn("$python $agent --startup auto install", script)
+        self.assertNotIn("$python $agent install --startup auto", script)
+
     def test_windows_11_pro_reports_edition_display_version_and_ubr(self):
         rows = [
             {'Manufacturer': 'Maker', 'Model': 'Model', 'Domain': 'EXAMPLE', 'PartOfDomain': True,

@@ -38,15 +38,19 @@ Copy-Item -Force (Join-Path $source 'server-ca.crt') $dataDir
 if ($LASTEXITCODE -ne 0) { throw 'Agentin tietohakemiston käyttöoikeuksien asetus epäonnistui.' }
 
 $agent = Join-Path $installDir 'ilona_agent_windows.py'
-if (-not $SkipEnrollment) {
+$configPath = Join-Path $dataDir 'config.json'
+if (-not $SkipEnrollment -and -not (Test-Path $configPath)) {
     Write-Host "Varmista, että Ilona Adminin HTTPS-osoite on saavutettavissa (VPN-yhteys kunnossa)."
     Write-Host 'Syötä tämän työaseman Ilona Adminissa luotu kertakäyttöinen enrollment-token.'
-    & $python $agent --config (Join-Path $dataDir 'config.json') --ca-file (Join-Path $dataDir 'server-ca.crt') enroll
+    & $python $agent --config $configPath --ca-file (Join-Path $dataDir 'server-ca.crt') enroll
     if ($LASTEXITCODE -ne 0) { throw 'Enrollment epäonnistui. Palvelua ei asennettu eikä käynnistetty.' }
+} elseif (Test-Path $configPath) {
+    Write-Host 'Työasema on jo enrollattu; käytetään tallennettua laitekohtaista tunnistetta.'
 }
 
-if (-not $SkipEnrollment -or (Test-Path (Join-Path $dataDir 'config.json'))) {
-    & $python $agent install --startup auto
+if (Test-Path $configPath) {
+    # pywin32's HandleCommandLine expects options before its service verb.
+    & $python $agent --startup auto install
     if ($LASTEXITCODE -ne 0) { throw 'Windows-palvelun asennus epäonnistui.' }
     & $python $agent start
     if ($LASTEXITCODE -ne 0) { throw 'Windows-palvelun käynnistys epäonnistui.' }

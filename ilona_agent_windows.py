@@ -21,13 +21,19 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 ROOT = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'Ilona' / 'Agent'
 CONFIG = ROOT / 'config.json'
 CA_FILE = ROOT / 'server-ca.crt'
 STATE = ROOT / 'queue.db'
 LOG_FILE = ROOT / 'agent.log'
 STOP = False
+SERVICE_COMMANDS = frozenset(('install', 'update', 'remove', 'start', 'stop', 'restart', 'debug'))
+
+
+def is_service_command(arguments):
+    """Recognize pywin32 service verbs even when options precede the verb."""
+    return any(argument in SERVICE_COMMANDS for argument in arguments)
 
 
 def powershell_json(expression, timeout=45):
@@ -522,7 +528,7 @@ def main(argv=None):
 
 
 if __name__=='__main__':
-    if len(sys.argv)>1 and sys.argv[1] in ('install','update','remove','start','stop','restart','debug'):
+    if is_service_command(sys.argv[1:]):
         if IlonaAgentService is None: raise SystemExit('pywin32 puuttuu; asenna requirements-windows.txt.')
         win32serviceutil.HandleCommandLine(IlonaAgentService)
     else:

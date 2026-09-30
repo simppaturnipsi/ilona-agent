@@ -24,12 +24,11 @@ system metadata. Installed application versions are reported separately.
 
 Requirements: 64-bit Python 3.12 with the Python Launcher, PowerShell, and an
 Administrator PowerShell session. First establish the workstation's VPN route
-to Ilona Admin. Download and extract `IlonaAgent-Windows.zip`, then run in the
-extracted folder:
+to Ilona Admin. Download and extract `IlonaAgent-Windows.zip`, then open an
+Administrator PowerShell window in the folder containing `install-windows.ps1`:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
-cd .\ilona-agent
 .\install-windows.ps1
 ```
 
@@ -55,7 +54,7 @@ outages and drained when connectivity returns. Re-enrollment is not needed for
 ordinary outages. To install without enrolling, use
 `install-windows.ps1 -SkipEnrollment`; after manually enrolling with the
 installed Python command, run `& "$env:ProgramFiles\Ilona\Agent\venv\Scripts\python.exe"
-"$env:ProgramFiles\Ilona\Agent\ilona_agent_windows.py" install --startup auto` and
+"$env:ProgramFiles\Ilona\Agent\ilona_agent_windows.py" --startup auto install` and
 then run the same command with `start` in place of `install`.
 
 The Windows installer does not install or alter WireGuard, domain membership,
@@ -71,7 +70,7 @@ $py = "$env:ProgramFiles\Ilona\Agent\venv\Scripts\python.exe"
 $agent = "$env:ProgramFiles\Ilona\Agent\ilona_agent_windows.py"
 $data = "$env:ProgramData\Ilona\Agent"
 & $py $agent --config "$data\config.json" --ca-file "$data\server-ca.crt" enroll
-& $py $agent install --startup auto
+& $py $agent --startup auto install
 & $py $agent start
 ```
 
